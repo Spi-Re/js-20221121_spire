@@ -138,6 +138,8 @@ export default class ProductForm {
   productCategoryOption(category, categoryTitle) {
     const { subcategories } = category;
     return subcategories.map((sub) => {
+      // new Object возвращает объект, для его использования нужно поменять подход.
+      // new Option(`${categoryTitle} > ${sub.title}`, `${sub.id}`;
       return `<option value="${sub.id}">${categoryTitle} &gt; ${sub.title}</option>`;
     });
   }

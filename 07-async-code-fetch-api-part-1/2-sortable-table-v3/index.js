@@ -211,13 +211,15 @@ export default class SortableTable {
     const url = new URL(this.url, BACKEND_URL);
     url.searchParams.set("_start", this.startIndex);
     url.searchParams.set("_end", this.lastIndex);
+    url.searchParams.set("_sort", id || defaultId);
+    url.searchParams.set("_order", order);
 
     const defaultId = this.headerConfig.find((item) => item.sortable).id;
     const { id, order } = this.sortBy;
 
-    if (!this.isSortOnClient) {
-      url.searchParams.set("_sort", id || defaultId);
-      url.searchParams.set("_order", order);
+    if (this.isSortOnClient) {
+      url.searchParams.delete("_sort");
+      url.searchParams.delete("_order");
       return url;
     }
     return url;
