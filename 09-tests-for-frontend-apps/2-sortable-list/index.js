@@ -8,9 +8,13 @@ export default class SortableList {
     const wrapper = document.createElement("div");
     const ul = document.createElement("ul");
     ul.className = "sortable-list";
+    let i = 0;
     this.items.forEach((item) => {
       item.className = "sortable-list__item";
+      item.style.top = 0 + "px";
+      item.setAttribute("koko", i);
       ul.append(item);
+      i++;
     });
     wrapper.append(ul);
     this.element = wrapper.firstChild;
@@ -18,10 +22,11 @@ export default class SortableList {
     this.eventListeners();
   }
 
-  copyTarget(className, innerHTML) {
+  copyTarget(className, attribute, innerHTML) {
     const copyTarget = document.createElement("li");
     copyTarget.className = className;
     copyTarget.innerHTML = innerHTML;
+    copyTarget.setAttribute("koko", attribute);
     copyTarget.style.position = "absolute";
     // style.top работает до margin
     copyTarget.style.margin = 0 + "px";
@@ -35,7 +40,7 @@ export default class SortableList {
     this.element.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       let target = null;
-      // TODO: Нужно достать координаты всех span, которые можно грабать
+      // TODO: Нужны координаты всех span, которые можно грабать
       // TODO: При переводе на эти координаты, менять весь li местами с target
       // YES = TODO: При pointerUp добавлять классы и HTML target и удалять копию
 
@@ -44,7 +49,11 @@ export default class SortableList {
         target.ondragstart = () => false;
         copyOfTargetHTML = target.innerHTML;
 
-        const copyTarget = this.copyTarget(target.className, copyOfTargetHTML);
+        const copyTarget = this.copyTarget(
+          target.className,
+          target.getAttribute("koko"),
+          copyOfTargetHTML
+        );
         document.body.append(copyTarget);
         target.innerHTML = "";
         target.classList.add("sortable-list__placeholder");
@@ -56,6 +65,34 @@ export default class SortableList {
         // ============================================================
         function onPointerMove(event) {
           moveAt(event.pageY);
+          let topOfParent = target.offsetParent.offsetTop;
+
+          copyTarget.style.display = "none";
+
+          let elemBelow = document.elementFromPoint(
+            event.clientX,
+            event.clientY
+          );
+
+          try {
+            if (!elemBelow) throw new Error("Ты за пределами экрана");
+            if (!elemBelow.closest(".sortable-list"))
+              throw new Error("вернись в контейнер");
+            if (!elemBelow.closest(".sortable-list__item"))
+              throw new Error("Нет нужного родителя");
+
+            // TODO: Нужно прибавлять / убавлять координаты
+            // YES - TODO: вниз
+            // TODO: вверх
+            if (elemBelow !== target) {
+              elemBelow.style.top = parseInt(elemBelow.style.top) - 76 + "px";
+              target.style.top = parseInt(target.style.top) + 76 + "px";
+            }
+          } catch (e) {
+            console.log(e.message);
+          }
+
+          copyTarget.style.display = "flex";
         }
         function moveAt(pageY) {
           copyTarget.style.width = target.offsetWidth + "px";
