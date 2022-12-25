@@ -42,22 +42,21 @@ export default class SortableList {
   };
 
   constructor(items) {
-    this.items = items.items;
+    this.items = items;
 
     this.render();
   }
 
   render() {
     this.element = document.createElement("ul");
-    this.element.className = "sortable-list";
-
+    this.element.classList.add("sortable-list");
     this.addItems();
     this.initEventListeners();
   }
 
   addItems() {
     this.items.forEach((item) => {
-      item.className = "sortable-list__item";
+      item.classList.add("sortable-list__item");
     });
 
     this.element.append(...this.items);
@@ -98,7 +97,9 @@ export default class SortableList {
 
   dragStart(element, { clientX, clientY }) {
     this.draggingElem = element;
+
     this.elementInitialIndex = [...this.element.children].indexOf(element);
+
     const { x, y } = element.getBoundingClientRect();
     const { offsetWidth, offsetHeight } = element;
 
@@ -117,7 +118,9 @@ export default class SortableList {
     );
 
     this.draggingElem.after(this.placeholderElement);
-    this.element.append(this.draggingElem);
+
+    this.element.append(this.draggingElem); // Почему нужно перемещать в конец?
+
     this.moveDraggingAt(clientX, clientY);
     this.addDocumentEventListeners();
   }
@@ -150,7 +153,7 @@ export default class SortableList {
   dragStop() {
     const placeholderIndex = [...this.element.children].indexOf(
       this.placeholderElement
-    );
+    ); // ??????
 
     this.draggingElem.style.cssText = "";
     this.draggingElem.classList.remove("sortable-list__item_dragging");
@@ -161,12 +164,14 @@ export default class SortableList {
 
     if (placeholderIndex !== this.elementInitialIndex) {
       this.dispatchEvent("sortable-list-reorder", {
+        // Зачем нужно?
         from: this.elementInitialIndex,
         to: placeholderIndex,
       });
     }
   }
 
+  // ?????
   dispatchEvent(type, details) {
     this.element.dispatchEvent(
       new CustomEvent(type, {
