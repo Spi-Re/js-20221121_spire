@@ -5,9 +5,6 @@ import fetchJson from "./utils/fetch-json.js";
 const IMGUR_CLIENT_ID = "28aaa2e823b03b1";
 const BACKEND_URL = "https://course-js.javascript.ru";
 
-// https://course-js.javascript.ru/api/rest/products
-
-// TODO: реализовать загрузку формы
 export default class ProductForm {
   subElements = {};
   defaultProductData = {
@@ -81,22 +78,47 @@ export default class ProductForm {
   }
 
   initEventListeners = () => {
-    const { save, uploadImage } = this.subElements;
+    const { uploadImage, productForm } = this.subElements;
 
+    productForm.addEventListener("submit", this.preparingProductToUpload);
     uploadImage.addEventListener("click", this.callUpload);
-    save.addEventListener("click", this.uploadFormDataOnServer);
+    document.addEventListener("change", this.changeProduct);
   };
 
-  //TODO: сделать отдельный объект для данной формы и отправляь его Json
-  uploadFormDataOnServer = (event) => {
+  changeProduct = (event) => {
+    const control = event.target.closest("[name]");
+    if (!control) return;
+    this.product[control.name] = control.value;
+  };
+
+  preparingProductForUpload = (event) => {
     event.preventDefault();
-    const { productForm } = this.subElements;
-    console.log(productForm);
 
-    this.currentProduct = {
-      // id,
-    };
+    const { imageListContainer } = this.subElements;
+    this.product.images = [];
+    [...imageListContainer.firstElementChild.children].forEach((element) => {
+      const [urlInput, sourceInput] = element.querySelectorAll("[name]");
+      const { value: url } = urlInput;
+      const { value: source } = sourceInput;
+      this.product.images.push({
+        url,
+        source,
+      });
+    });
+
+    this.uploadProductOnServer();
+    console.log(this.product);
   };
+
+  uploadProductOnServer() {
+    return fetch(`${BACKEND_URL}/api/rest/products`, {
+      method: this.productId ? "PATCH" : "PUT",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
+      body: JSON.stringify(this.product),
+    });
+  }
 
   callUpload = (event) => {
     event.preventDefault();
@@ -130,10 +152,9 @@ export default class ProductForm {
     });
 
     const { data } = await respond.json();
-    this.imageLink = data.link;
 
     this.subElements["imageListContainer"].firstElementChild.append(
-      this.imageTemplate(this.imageLink, source)
+      this.imageTemplate(data.link, source)
     );
   }
 
@@ -152,7 +173,6 @@ export default class ProductForm {
     if (this.productId) save.innerHTML = "Сохранить товар";
   }
 
-  // TODO: Реализовать newOption
   productCategoryOption() {
     const { subcategory } = this.subElements;
     const arrOfOptions = [];
@@ -235,7 +255,6 @@ export default class ProductForm {
               <div class="form-group form-group__half_left">
                 <label class="form-label">Категория</label>
                 <select class="form-control" data-element='subcategory' name="subcategory">
-                  
                 </select>
               </div>
                 
@@ -270,5 +289,18 @@ export default class ProductForm {
               </div>
             </form>
           </div>`;
+  }
+
+  remove() {
+    if (this.element) {
+      this.element.remove();
+      document.removeEventListener("change", this.changeProduct);
+    }
+  }
+
+  destroy() {
+    this.remove();
+    this.subElements = null;
+    this.defaultProductData = null;
   }
 }

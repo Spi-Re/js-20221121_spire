@@ -96,7 +96,7 @@ export default class SortableList {
   }
 
   dragStart(element, { clientX, clientY }) {
-    this.draggingElem = element; // элемент li с событием 'pointer' 
+    this.draggingElem = element;
 
     this.elementInitialIndex = [...this.element.children].indexOf(element);
 
@@ -110,16 +110,15 @@ export default class SortableList {
 
     this.draggingElem.style.width = `${offsetWidth}px`;
     this.draggingElem.style.height = `${offsetHeight}px`;
-    this.draggingElem.classList.add("sortable-list__item_dragging");
 
+    this.draggingElem.classList.add("sortable-list__item_dragging");
     this.placeholderElement = this.createPlaceholderElement(
       offsetWidth,
       offsetHeight
     );
-
     this.draggingElem.after(this.placeholderElement);
 
-    this.element.append(this.draggingElem); // Почему нужно перемещать в конец?
+    this.element.append(this.draggingElem);
 
     this.moveDraggingAt(clientX, clientY);
     this.addDocumentEventListeners();
