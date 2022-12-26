@@ -96,7 +96,7 @@ export default class SortableList {
   }
 
   dragStart(element, { clientX, clientY }) {
-    this.draggingElem = element;
+    this.draggingElem = element; // элемент li с событием 'pointer' 
 
     this.elementInitialIndex = [...this.element.children].indexOf(element);
 
