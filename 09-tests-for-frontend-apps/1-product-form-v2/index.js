@@ -33,6 +33,8 @@ export default class ProductForm {
 
       this.imageUploader(imageData, source);
     });
+
+    input.remove();
   };
 
   onUploadProductOnServer = (event) => {
@@ -123,16 +125,18 @@ export default class ProductForm {
     }
   }
 
+  //FIXME: Не понимаю почему загруженное image отображается как placeholder. URL валидный.
   getImageTemplate(url, source) {
     const div = document.createElement("div");
-
     div.innerHTML = `<li class="products-edit__imagelist-item sortable-list__item" style="">
                         <input type="hidden" name="url" value="${url}"/>
                         <input type="hidden" name="source" value="${source}"/>
                         <span>
                           <img src="icon-grab.svg" data-grab-handle="" alt="grab" />
-                          <img class="sortable-table__cell-img" alt="Image" src="${url}"/>
-                          <span>${source}</span>
+                          <img class="sortable-table__cell-img" alt="${escapeHtml(
+                            source
+                          )}" src="${escapeHtml(url)}"/>
+                          <span>${escapeHtml(source)}</span>
                         </span>
                         <button type="button">
                           <img src="icon-trash.svg" data-delete-handle="" alt="delete"/>
@@ -281,7 +285,7 @@ export default class ProductForm {
 
   async imageUploader(imageData, source) {
     try {
-      const respond = await fetch("https://api.imgur.com/3/image", {
+      const result = await fetchJson("https://api.imgur.com/3/image", {
         method: "POST",
         headers: {
           Authorization: `Client-ID ${IMGUR_CLIENT_ID}`,
@@ -290,7 +294,7 @@ export default class ProductForm {
         referrer: " ",
       });
 
-      const { data } = await respond.json();
+      const { data } = result;
 
       this.subElements["imageListContainer"].firstElementChild.append(
         this.getImageTemplate(data.link, source)
