@@ -1,7 +1,8 @@
-import fetchJson from "./utils/fetch-json.js";
+import fetchJson from "../../../utils/fetch-json.js";
 
 const BACKEND_URL = "https://course-js.javascript.ru";
 
+// FIXME: При сортировке, обновляет таблицу с данными за полсдений месяц.
 export default class SortableTable {
   _elemsOnPage = 30;
   startIndex = 0;
@@ -13,11 +14,16 @@ export default class SortableTable {
     type: "",
   };
 
-  constructor(headerConfig, { data = [], sorted = {}, url = "" } = {}) {
+  constructor(
+    headerConfig,
+    { data = [], sorted = {}, url = "", from = "", to = "" } = {}
+  ) {
     this.data = data;
     this.url = url;
     this.headerConfig = headerConfig;
     this.sorted = sorted;
+    this.from = from;
+    this.to = to;
 
     this.isSortOnClient =
       Object.hasOwn(sorted, "id") && Object.hasOwn(sorted, "order");
@@ -47,14 +53,12 @@ export default class SortableTable {
   }
 
   getProductsContainer() {
-    return `<div 
-              data-element="productsContainer" 
-              class="products-list__container">
+    return `
               <div class="sortable-table">
                   ${this.getHeaderTemplate()}
                   ${this.getBodyTemplate()}
               </div>
-            </div>`;
+           `;
   }
 
   getHeaderTemplate() {
@@ -95,14 +99,15 @@ export default class SortableTable {
   }
 
   getBodyTemplateRow() {
-    const div = document.createElement("div");
+    let wrapper = document.createElement("div");
     if (!this.data.length) {
-      div.innerHTML = `<h1>Загрузка содержимого</h1>`;
-      div.className = "bottom-element";
-      document.body.append(div);
+      wrapper.innerHTML = `<h1>Загрузка содержимого</h1>`;
+      wrapper.className = "bottom-element";
+      document.body.append(wrapper);
       return "";
     }
-    div.remove();
+    wrapper.innerHTML = "";
+    wrapper.remove();
 
     if (this.data === "empty") return "По вашему запросу нет данных";
 
@@ -203,15 +208,20 @@ export default class SortableTable {
       this.lastIndex = 30;
       this.wasSorting = true;
 
-      this.isSortOnClient ? this.update() : this.requestOnServer();
+      this.isSortOnClient ? this.copyUpdate() : this.requestOnServer();
     });
   }
 
-  get urlRequest() {
+  urlRequest(from, to) {
+    const _from = from ? from : this.from;
+    const _to = to ? to : this.to;
+
     const { id, order } = this.sortBy;
     const defaultId = this.headerConfig.find((item) => item.sortable).id;
 
     const url = new URL(this.url, BACKEND_URL);
+    url.searchParams.set("from", _from);
+    url.searchParams.set("to", _to);
     url.searchParams.set("_start", this.startIndex);
     url.searchParams.set("_end", this.lastIndex);
     url.searchParams.set("_sort", id || defaultId);
@@ -225,29 +235,42 @@ export default class SortableTable {
     return url;
   }
 
-  async requestOnServer() {
-    const result = await fetchJson(this.urlRequest);
+  async requestOnServer(from, to, isRange = false) {
+    const result = await fetchJson(this.urlRequest(from, to));
     this.data = result.length ? result : "empty";
-    this.update();
+    this.copyUpdate(isRange);
 
-    if (!this.wasSorting) {
+    if (!this.wasSorting && !isRange) {
       const lastElem = document.querySelector(".bottom-element");
       this.infiniteObserver(lastElem);
     }
     this.wasSorting = false;
   }
 
-  update() {
-    this.wasSorting
-      ? (this.subElements.body.innerHTML = this.getBodyTemplateRow())
-      : this.subElements.body.insertAdjacentHTML(
-          "beforeend",
-          this.getBodyTemplateRow()
-        );
+  copyUpdate(isRange) {
+    if (isRange) {
+      this.subElements.body.innerHTML = this.getBodyTemplateRow();
+    } else {
+      this.wasSorting
+        ? (this.subElements.body.innerHTML = this.getBodyTemplateRow())
+        : this.subElements.body.insertAdjacentHTML(
+            "beforeend",
+            this.getBodyTemplateRow()
+          );
+    }
   }
 
-  infiniteObserver(item) {
+  update(from, to) {
+    const isRange = true;
+    this.requestOnServer(from, to, isRange);
+  }
+
+  // FIXME: Спрашивает сервер 2 раза подряд
+  // где-то висит фантомное событие. При обновление Пикера, оно не удаляется.
+  infiniteObserver(item, isRange) {
     const infiniteObserver = new IntersectionObserver(([entry], observer) => {
+      // предотвращает навешивания обзёрвера при изменении даты, но остаётся ещё что-то
+      if (isRange) observer.unobserve(entry.target);
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
         this.startIndex = this.lastIndex + 1;
@@ -255,7 +278,6 @@ export default class SortableTable {
         this.requestOnServer();
       }
     }, {});
-
     infiniteObserver.observe(item);
   }
 
