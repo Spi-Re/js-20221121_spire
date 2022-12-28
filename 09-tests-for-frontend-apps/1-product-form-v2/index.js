@@ -125,11 +125,12 @@ export default class ProductForm {
     }
   }
 
-  //FIXME: Не понимаю почему загруженное image отображается как placeholder. URL валидный.
   getImageTemplate(url, source) {
     const div = document.createElement("div");
     div.innerHTML = `<li class="products-edit__imagelist-item sortable-list__item" style="">
-                        <input type="hidden" name="url" value="${url}"/>
+                        <input type="hidden" name="url" value="${escapeHtml(
+                          url
+                        )}"/>
                         <input type="hidden" name="source" value="${source}"/>
                         <span>
                           <img src="icon-grab.svg" data-grab-handle="" alt="grab" />
