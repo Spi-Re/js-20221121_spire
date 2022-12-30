@@ -152,7 +152,7 @@ export default class SortableList {
   dragStop() {
     const placeholderIndex = [...this.element.children].indexOf(
       this.placeholderElement
-    ); // ??????
+    );
 
     this.draggingElem.style.cssText = "";
     this.draggingElem.classList.remove("sortable-list__item_dragging");
@@ -163,14 +163,12 @@ export default class SortableList {
 
     if (placeholderIndex !== this.elementInitialIndex) {
       this.dispatchEvent("sortable-list-reorder", {
-        // Зачем нужно?
         from: this.elementInitialIndex,
         to: placeholderIndex,
       });
     }
   }
 
-  // ?????
   dispatchEvent(type, details) {
     this.element.dispatchEvent(
       new CustomEvent(type, {

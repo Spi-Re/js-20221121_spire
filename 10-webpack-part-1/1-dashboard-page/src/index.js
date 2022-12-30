@@ -127,12 +127,10 @@ export default class Page {
     from = from.toISOString();
     to = to.toISOString();
 
-    console.log(from);
-
     ordersChart.update(from, to);
     salesChart.update(from, to);
     customersChart.update(from, to);
-    sortableTable.update(from, to);
+    sortableTable.update();
   }
 
   // TODO: Удаляет элементы и обработчики
